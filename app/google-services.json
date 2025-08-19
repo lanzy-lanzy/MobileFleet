@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "423099852245",
+    "project_id": "mobilefleet-66df3",
+    "storage_bucket": "mobilefleet-66df3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423099852245:android:5790679992fc5f7c75095c",
+        "android_client_info": {
+          "package_name": "com.ml.mobilefleet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2BaYPBk2gVx2xHZW425DXk84-tHa1I9Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
