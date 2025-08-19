@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.ml.mobilefleet.data.models.Terminal
 import com.ml.mobilefleet.data.models.Trip
 import com.ml.mobilefleet.data.repository.FirebaseRepository
+import com.ml.mobilefleet.services.TextToSpeechService
+import com.ml.mobilefleet.services.HapticFeedbackService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,9 @@ import kotlinx.coroutines.launch
  * ViewModel for managing trip operations
  */
 class TripViewModel(
-    private val repository: FirebaseRepository = FirebaseRepository()
+    private val repository: FirebaseRepository = FirebaseRepository(),
+    private var textToSpeechService: TextToSpeechService? = null,
+    private val hapticFeedbackService: HapticFeedbackService? = null
 ) : ViewModel() {
     
     // Current driver ID (hardcoded as per requirements)
@@ -36,6 +40,13 @@ class TripViewModel(
     init {
         loadTerminals()
         loadCurrentTrip()
+    }
+
+    /**
+     * Set the TextToSpeech service for announcements
+     */
+    fun setTextToSpeechService(ttsService: TextToSpeechService) {
+        textToSpeechService = ttsService
     }
     
     /**
@@ -87,6 +98,12 @@ class TripViewModel(
             repository.getTerminalByQrCode(qrCode)
                 .onSuccess { terminal ->
                     if (terminal != null) {
+                        // Trigger haptic feedback for successful scan
+                        hapticFeedbackService?.qrScanSuccess()
+
+                        // Trigger TTS announcement
+                        textToSpeechService?.announceQrScanSuccess(terminal.name)
+
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             startTerminal = terminal,
@@ -117,10 +134,14 @@ class TripViewModel(
             _uiState.value = _uiState.value.copy(errorMessage = "Start terminal not selected")
             return
         }
-        
+
+        // Find destination terminal name
+        val destinationTerminal = _terminals.value.find { it.id == destinationTerminalId }
+        val destinationTerminalName = destinationTerminal?.name ?: destinationTerminalId
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            
+
             repository.startTrip(
                 driverId = currentDriverId,
                 startTerminalId = startTerminal.id,
@@ -128,10 +149,23 @@ class TripViewModel(
                 passengers = passengers
             )
                 .onSuccess { tripId ->
+                    // Trigger haptic feedback
+                    hapticFeedbackService?.tripStartSuccess()
+
+                    // Trigger TTS announcement
+                    textToSpeechService?.announceTripStart(
+                        startTerminalName = startTerminal.name,
+                        destinationTerminalName = destinationTerminalName,
+                        passengerCount = passengers
+                    )
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         tripStarted = true,
-                        currentTripId = tripId
+                        currentTripId = tripId,
+                        showTripStartModal = true,
+                        tripStartTime = System.currentTimeMillis(),
+                        destinationTerminalName = destinationTerminalName
                     )
                     loadCurrentTrip() // Reload current trip
                 }
@@ -164,7 +198,7 @@ class TripViewModel(
                     if (terminal != null) {
                         if (terminal.id == currentTrip.destination_terminal) {
                             // Correct destination - complete the trip
-                            completeTrip(currentTrip.id, terminal.id)
+                            completeTrip(currentTrip.id, terminal.id, terminal.name)
                         } else {
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
@@ -201,6 +235,12 @@ class TripViewModel(
         viewModelScope.launch {
             repository.updateTripPassengers(currentTrip.id, newPassengerCount)
                 .onSuccess {
+                    // Trigger haptic feedback
+                    hapticFeedbackService?.passengerCountChange()
+
+                    // Trigger TTS announcement
+                    textToSpeechService?.announcePassengerUpdate(newPassengerCount)
+
                     // Update local state - Firebase handles real-time sync automatically
                     _currentTrip.value = currentTrip.copy(passengers = newPassengerCount)
                 }
@@ -220,16 +260,47 @@ class TripViewModel(
     }
 
     /**
+     * Dismiss trip start modal
+     */
+    fun dismissTripStartModal() {
+        _uiState.value = _uiState.value.copy(showTripStartModal = false)
+    }
+
+    /**
+     * Dismiss trip completion modal
+     */
+    fun dismissTripCompletionModal() {
+        _uiState.value = _uiState.value.copy(
+            showTripCompletionModal = false,
+            tripCompleted = false
+        )
+    }
+
+    /**
      * Complete the current trip
      * Firebase automatically syncs with web dashboard in real-time
      */
-    private fun completeTrip(tripId: String, arrivalTerminalId: String) {
+    private fun completeTrip(tripId: String, arrivalTerminalId: String, terminalName: String) {
+        val currentTrip = _currentTrip.value
         viewModelScope.launch {
             repository.completeTrip(tripId, arrivalTerminalId)
                 .onSuccess {
+                    // Trigger haptic feedback
+                    hapticFeedbackService?.tripCompletionSuccess()
+
+                    // Trigger TTS announcement
+                    if (currentTrip != null) {
+                        textToSpeechService?.announceTripCompletion(
+                            destinationTerminalName = terminalName,
+                            passengerCount = currentTrip.passengers
+                        )
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        tripCompleted = true
+                        tripCompleted = true,
+                        showTripCompletionModal = true,
+                        destinationTerminalName = terminalName
                     )
                     _currentTrip.value = null
                 }
@@ -249,6 +320,14 @@ class TripViewModel(
         _uiState.value = TripUiState()
         loadCurrentTrip()
     }
+
+    /**
+     * Cleanup resources when ViewModel is destroyed
+     */
+    override fun onCleared() {
+        super.onCleared()
+        textToSpeechService?.shutdown()
+    }
 }
 
 /**
@@ -261,5 +340,10 @@ data class TripUiState(
     val showPassengerInput: Boolean = false,
     val tripStarted: Boolean = false,
     val tripCompleted: Boolean = false,
-    val currentTripId: String? = null
+    val currentTripId: String? = null,
+    // Modal states
+    val showTripStartModal: Boolean = false,
+    val showTripCompletionModal: Boolean = false,
+    val tripStartTime: Long? = null,
+    val destinationTerminalName: String? = null
 )
