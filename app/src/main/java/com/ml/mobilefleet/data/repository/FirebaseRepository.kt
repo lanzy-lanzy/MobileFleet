@@ -275,6 +275,84 @@ class FirebaseRepository {
     }
 
     /**
+     * Get completed trips for a driver (trip history)
+     */
+    suspend fun getCompletedTripsForDriver(driverId: String, limit: Int = 20): Result<List<Trip>> {
+        return try {
+            Log.d("FirebaseRepository", "Fetching completed trips for driver: $driverId")
+
+            val snapshot = tripsCollection
+                .whereEqualTo("driver_id", driverId)
+                .whereEqualTo("status", TripStatus.COMPLETED.value)
+                .orderBy("arrival_time", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .get()
+                .await()
+
+            val trips = snapshot.documents.mapNotNull { document ->
+                document.toObject(Trip::class.java)?.copy(id = document.id)
+            }
+
+            Log.d("FirebaseRepository", "Found ${trips.size} completed trips for driver $driverId")
+            Result.success(trips)
+        } catch (e: Exception) {
+            Log.e("FirebaseRepository", "Error fetching completed trips for driver $driverId", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get multiple terminals by their IDs for trip history display
+     */
+    suspend fun getTerminalsByIds(terminalIds: List<String>): Result<Map<String, Terminal>> {
+        return try {
+            if (terminalIds.isEmpty()) {
+                return Result.success(emptyMap())
+            }
+
+            Log.d("FirebaseRepository", "Fetching terminals for IDs: $terminalIds")
+
+            // Firestore 'in' queries are limited to 10 items, so we need to batch if more
+            val terminalMap = mutableMapOf<String, Terminal>()
+
+            terminalIds.chunked(10).forEach { chunk ->
+                val snapshot = terminalsCollection
+                    .whereIn("terminal_id", chunk)
+                    .get()
+                    .await()
+
+                snapshot.documents.forEach { document ->
+                    val terminal = document.toObject(Terminal::class.java)?.copy(id = document.id)
+                    if (terminal != null) {
+                        terminalMap[terminal.terminal_id] = terminal
+                    }
+                }
+            }
+
+            Log.d("FirebaseRepository", "Found ${terminalMap.size} terminals out of ${terminalIds.size} requested")
+            Result.success(terminalMap)
+        } catch (e: Exception) {
+            Log.e("FirebaseRepository", "Error fetching terminals by IDs", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Delete a trip by ID
+     */
+    suspend fun deleteTrip(tripId: String): Result<Unit> {
+        return try {
+            Log.d("FirebaseRepository", "Deleting trip with ID: $tripId")
+            tripsCollection.document(tripId).delete().await()
+            Log.d("FirebaseRepository", "Trip deleted successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseRepository", "Error deleting trip $tripId", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Cancel a trip
      */
     suspend fun cancelTrip(tripId: String): Result<Unit> {

@@ -10,6 +10,8 @@ import androidx.navigation.compose.rememberNavController
 import com.ml.mobilefleet.ui.trip.CompleteTripScreen
 import com.ml.mobilefleet.ui.trip.StartTripScreen
 import com.ml.mobilefleet.ui.trip.TripViewModel
+import com.ml.mobilefleet.ui.history.TripHistoryScreen
+import com.ml.mobilefleet.ui.settings.SettingsScreen
 
 /**
  * Navigation routes for the Fleet app
@@ -17,6 +19,8 @@ import com.ml.mobilefleet.ui.trip.TripViewModel
 object FleetDestinations {
     const val START_TRIP = "start_trip"
     const val COMPLETE_TRIP = "complete_trip"
+    const val TRIP_HISTORY = "trip_history"
+    const val SETTINGS = "settings"
 }
 
 /**
@@ -64,6 +68,16 @@ fun FleetNavigation(
                     }
                 }
             )
+        }
+
+        composable(FleetDestinations.TRIP_HISTORY) {
+            TripHistoryScreen(
+                viewModel = tripViewModel
+            )
+        }
+
+        composable(FleetDestinations.SETTINGS) {
+            SettingsScreen()
         }
     }
 }

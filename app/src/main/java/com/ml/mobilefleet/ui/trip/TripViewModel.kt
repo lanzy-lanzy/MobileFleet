@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 
 /**
  * ViewModel for managing trip operations
@@ -36,10 +38,24 @@ class TripViewModel(
     // Current active trip
     private val _currentTrip = MutableStateFlow<Trip?>(null)
     val currentTrip: StateFlow<Trip?> = _currentTrip.asStateFlow()
+
+    // Trip history
+    private val _tripHistory = MutableStateFlow<List<Trip>>(emptyList())
+    val tripHistory: StateFlow<List<Trip>> = _tripHistory.asStateFlow()
+
+    // Terminal names for trip history display
+    private val _terminalNames = MutableStateFlow<Map<String, String>>(emptyMap())
+    val terminalNames: StateFlow<Map<String, String>> = _terminalNames.asStateFlow()
+
+    // Trip monitoring job for state persistence
+    private var tripMonitoringJob: Job? = null
     
     init {
         loadTerminals()
         loadCurrentTrip()
+        loadTripHistory()
+        // Set up periodic trip status checking for state persistence
+        startTripStatusMonitoring()
     }
 
     /**
@@ -84,6 +100,65 @@ class TripViewModel(
                         errorMessage = "Failed to load current trip: ${exception.message}"
                     )
                 }
+        }
+    }
+
+    /**
+     * Load trip history for the driver
+     */
+    private fun loadTripHistory() {
+        viewModelScope.launch {
+            repository.getCompletedTripsForDriver(currentDriverId)
+                .onSuccess { trips ->
+                    _tripHistory.value = trips
+
+                    // Load terminal names for the trips
+                    loadTerminalNamesForTrips(trips)
+                }
+                .onFailure { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Failed to load trip history: ${exception.message}"
+                    )
+                }
+        }
+    }
+
+    /**
+     * Load terminal names for trip history display
+     */
+    private fun loadTerminalNamesForTrips(trips: List<Trip>) {
+        viewModelScope.launch {
+            // Collect all unique terminal IDs from trips
+            val terminalIds = mutableSetOf<String>()
+            trips.forEach { trip ->
+                terminalIds.add(trip.start_terminal)
+                terminalIds.add(trip.destination_terminal)
+            }
+
+            if (terminalIds.isNotEmpty()) {
+                repository.getTerminalsByIds(terminalIds.toList())
+                    .onSuccess { terminalMap ->
+                        // Convert Terminal objects to name map
+                        val nameMap = terminalMap.mapValues { (_, terminal) -> terminal.name }
+                        _terminalNames.value = nameMap
+                    }
+                    .onFailure { exception ->
+                        Log.e("TripViewModel", "Failed to load terminal names", exception)
+                    }
+            }
+        }
+    }
+
+    /**
+     * Start monitoring trip status for state persistence
+     */
+    private fun startTripStatusMonitoring() {
+        tripMonitoringJob?.cancel()
+        tripMonitoringJob = viewModelScope.launch {
+            while (true) {
+                delay(30000) // Check every 30 seconds
+                loadCurrentTrip() // Refresh trip status
+            }
         }
     }
     
@@ -272,8 +347,15 @@ class TripViewModel(
     fun dismissTripCompletionModal() {
         _uiState.value = _uiState.value.copy(
             showTripCompletionModal = false,
-            tripCompleted = false
+            tripCompleted = false,
+            tripStarted = false, // Reset trip started state
+            currentTripId = null, // Clear trip ID
+            startTerminal = null, // Clear start terminal
+            showPassengerInput = false // Reset passenger input
         )
+        // Ensure current trip is cleared and state is fresh
+        _currentTrip.value = null
+        loadCurrentTrip() // Reload to ensure clean state
     }
 
     /**
@@ -302,7 +384,9 @@ class TripViewModel(
                         showTripCompletionModal = true,
                         destinationTerminalName = terminalName
                     )
+                    // Clear current trip and reload history
                     _currentTrip.value = null
+                    loadTripHistory() // Refresh trip history to include the newly completed trip
                 }
                 .onFailure { exception ->
                     _uiState.value = _uiState.value.copy(
@@ -318,7 +402,39 @@ class TripViewModel(
      */
     fun resetTripState() {
         _uiState.value = TripUiState()
+        _currentTrip.value = null // Explicitly clear current trip
+        loadCurrentTrip() // Reload to ensure state is fresh
+        loadTripHistory() // Refresh history
+    }
+
+    /**
+     * Manually refresh trip status for state persistence
+     */
+    fun refreshTripStatus() {
         loadCurrentTrip()
+        loadTripHistory()
+    }
+
+    /**
+     * Delete a trip from history
+     */
+    fun deleteTrip(tripId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            repository.deleteTrip(tripId)
+                .onSuccess {
+                    // Remove trip from local state
+                    _tripHistory.value = _tripHistory.value.filter { it.id != tripId }
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .onFailure { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to delete trip: ${exception.message}"
+                    )
+                }
+        }
     }
 
     /**
@@ -326,6 +442,7 @@ class TripViewModel(
      */
     override fun onCleared() {
         super.onCleared()
+        tripMonitoringJob?.cancel()
         textToSpeechService?.shutdown()
     }
 }
