@@ -41,6 +41,13 @@ android {
 }
 
 dependencies {
+    // Splash Screen API for Android 12+
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Lottie for animations
+    implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
+
     // Firebase BOM
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
 

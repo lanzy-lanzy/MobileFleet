@@ -7,4 +7,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Fleet App Colors -->
+    <color name="splash_background">#FF1976D2</color>
+    <color name="fleet_primary">#FF2196F3</color>
+    <color name="fleet_secondary">#FFFF9800</color>
+    <color name="fleet_accent">#FF4CAF50</color>
 </resources>
