@@ -1,12 +1,12 @@
 package com.ml.mobilefleet.ui.trip
 
 import android.Manifest
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -24,7 +26,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ml.mobilefleet.ui.scanner.QRCodeScanner
 import com.ml.mobilefleet.ui.components.TripCompletionModal
-import com.ml.mobilefleet.ui.components.QRCodeImage
 import com.ml.mobilefleet.services.TextToSpeechService
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -37,6 +38,7 @@ fun CompleteTripScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTrip by viewModel.currentTrip.collectAsStateWithLifecycle()
+    val terminalNames by viewModel.terminalNames.collectAsStateWithLifecycle()
 
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -59,214 +61,455 @@ fun CompleteTripScreen(
         }
     }
     
+    // Scroll state for smooth scrolling
+    val scrollState = rememberScrollState()
+    
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Modern Header
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            )
+        // Modern Header with Gradient Background
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
+                        )
+                    )
+                )
+                .padding(32.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "🏁",
-                    style = MaterialTheme.typography.headlineLarge
-                )
+                // Modern icon with gradient background
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🏁",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                }
+                
                 Text(
                     text = "Complete Your Trip",
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Scan destination terminal to finish",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Scan destination terminal to finish your journey",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
         }
         
-        // Current Trip Info - Clean and modern
+        // Modern Trip Details Card with Gradient
         currentTrip?.let { trip ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        )
+                    )
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.padding(28.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Text(
-                        text = "Trip Details",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // Route information with icons
+                    // Modern header with gradient accent
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "From",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = trip.start_terminal,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "To",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = trip.destination_terminal,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    // Passenger count with modern controls
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Passengers",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${trip.passengers} passengers",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        // Passenger controls - cleaner design
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
-                            FilledTonalButton(
-                                onClick = {
-                                    if (trip.passengers > 0) {
-                                        viewModel.updatePassengerCount(trip.passengers - 1)
+                            Text(
+                                text = "🚌",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                        
+                        Text(
+                            text = "Trip Details",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Modern Route Information Cards
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        // From Terminal - Modern Card
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                                        )
+                                    )
+                                )
+                                .padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Departure",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = terminalNames[trip.start_terminal] ?: "Loading...",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
+                        // Destination Terminal - Modern Card
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f)
+                                        )
+                                    )
+                                )
+                                .padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+                                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Destination",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = terminalNames[trip.destination_terminal] ?: "Loading...",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
+                        // Passenger Count - Modern Interactive Card
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.2f),
+                                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.1f)
+                                        )
+                                    )
+                                )
+                                .padding(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Passengers",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "${trip.passengers} ${if (trip.passengers == 1) "passenger" else "passengers"}",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                // Modern Passenger Controls
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            brush = Brush.linearGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.surface,
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                                )
+                                            )
+                                        )
+                                        .padding(8.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        // Decrease Button
+                                        Surface(
+                                            onClick = {
+                                                if (trip.passengers > 0) {
+                                                    viewModel.updatePassengerCount(trip.passengers - 1)
+                                                }
+                                            },
+                                            enabled = trip.passengers > 0,
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = if (trip.passengers > 0)
+                                                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                                            else
+                                                MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                                            modifier = Modifier.size(48.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = "−",
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (trip.passengers > 0)
+                                                        MaterialTheme.colorScheme.error
+                                                    else
+                                                        MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                        }
+
+                                        // Count Display
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .background(
+                                                    brush = Brush.linearGradient(
+                                                        colors = listOf(
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                                        )
+                                                    )
+                                                )
+                                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = trip.passengers.toString(),
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+
+                                        // Increase Button
+                                        Surface(
+                                            onClick = {
+                                                viewModel.updatePassengerCount(trip.passengers + 1)
+                                            },
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                            modifier = Modifier.size(48.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = "+",
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
                                     }
-                                },
-                                modifier = Modifier.size(36.dp),
-                                contentPadding = PaddingValues(0.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "−",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Text(
-                                text = trip.passengers.toString(),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-
-                            FilledTonalButton(
-                                onClick = {
-                                    viewModel.updatePassengerCount(trip.passengers + 1)
-                                },
-                                modifier = Modifier.size(36.dp),
-                                contentPadding = PaddingValues(0.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "+",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                }
                             }
                         }
-                    }
 
-                    // Status with better styling
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(0.dp)
+                        // Modern Status Badge
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = trip.status.uppercase(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = when (trip.status.lowercase()) {
+                                                "in_progress" -> listOf(
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                                )
+                                                "completed" -> listOf(
+                                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
+                                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                                                )
+                                                else -> listOf(
+                                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                                                )
+                                            }
+                                        )
+                                    )
+                                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                when (trip.status.lowercase()) {
+                                                    "in_progress" -> MaterialTheme.colorScheme.primary
+                                                    "completed" -> MaterialTheme.colorScheme.tertiary
+                                                    else -> MaterialTheme.colorScheme.secondary
+                                                }
+                                            )
+                                    )
+                                    Text(
+                                        text = trip.status.replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = when (trip.status.lowercase()) {
+                                            "in_progress" -> MaterialTheme.colorScheme.primary
+                                            "completed" -> MaterialTheme.colorScheme.tertiary
+                                            else -> MaterialTheme.colorScheme.secondary
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        
+
+        // QR Scanner Section
         if (showScanner && cameraPermissionState.status.isGranted) {
             // QR Code Scanner - Full height for better camera preview
             QRCodeScanner(
@@ -282,167 +525,98 @@ fun CompleteTripScreen(
                     .fillMaxWidth()
                     .height(500.dp) // Fixed height for better camera preview
             )
-        } else {
-            // Scan Destination QR Code Section - Clean and modern
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // QR Code icon
-                    Text(
-                        text = "📱",
-                        style = MaterialTheme.typography.headlineLarge
-                    )
+        }
 
+        if (!showScanner) {
+            // Elegant Scan Section - Minimalist approach
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Elegant QR icon
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                    modifier = Modifier.size(80.dp)
+                ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Text(
-                            text = "Scan Destination QR Code",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Text(
-                            text = "Point your camera at the destination terminal's QR code to complete your trip",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "📱",
+                            style = MaterialTheme.typography.headlineLarge
                         )
                     }
+                }
 
-                    Button(
-                        onClick = {
-                            if (cameraPermissionState.status.isGranted) {
-                                showScanner = true
-                            } else {
-                                cameraPermissionState.launchPermissionRequest()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !uiState.isLoading,
-                        shape = RoundedCornerShape(12.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Scan Destination QR Code",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "Point your camera at the destination terminal's QR code to complete your trip",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
+                // Elegant scan button
+                Surface(
+                    onClick = {
+                        if (cameraPermissionState.status.isGranted) {
+                            showScanner = true
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }
+                    },
+                    enabled = !uiState.isLoading,
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(20.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = "Start Scanning",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.weight(1f))
-        }
-        
-        // Success Message - Clean and celebratory
-        if (uiState.tripCompleted) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "🎉",
-                        style = MaterialTheme.typography.headlineLarge
-                    )
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Text(
-                        text = "Trip Completed Successfully!",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-
-        // Error Message - Clean and informative
-        uiState.errorMessage?.let { error ->
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "⚠️",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = "Error",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
-                    }
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-
-                    FilledTonalButton(
-                        onClick = { viewModel.clearError() },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Dismiss")
                     }
                 }
             }
         }
-        
-        // Loading Indicator
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+
+        // Add bottom padding for better scrolling
+        Spacer(modifier = Modifier.height(24.dp))
     }
 
     // Trip Completion Modal
@@ -451,6 +625,6 @@ fun CompleteTripScreen(
         destinationTerminalName = uiState.destinationTerminalName ?: "",
         passengerCount = currentTrip?.passengers ?: 0,
         startTime = uiState.tripStartTime ?: System.currentTimeMillis(),
-        onDismiss = viewModel::dismissTripCompletionModal
+        onDismiss = { viewModel.dismissTripCompletionModal() }
     )
 }

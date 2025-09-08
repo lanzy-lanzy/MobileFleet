@@ -32,7 +32,7 @@ class AuthViewModel(
     /**
      * Check if there's an existing login session
      */
-    private fun checkExistingSession() {
+    fun checkExistingSession() {
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true)
             
@@ -93,37 +93,7 @@ class AuthViewModel(
         }
     }
     
-    /**
-     * Login with driver ID and password
-     */
-    fun loginWithDriverId(driverId: String, password: String) {
-        viewModelScope.launch {
-            _authState.value = _authState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-            
-            authRepository.loginWithDriverId(driverId, password)
-                .onSuccess { driver ->
-                    _authState.value = _authState.value.copy(
-                        isAuthenticated = true,
-                        currentDriver = driver,
-                        isLoading = false,
-                        errorMessage = null
-                    )
-                    Log.d(TAG, "Login successful for driver: ${driver.driver_id}")
-                }
-                .onFailure { exception ->
-                    _authState.value = _authState.value.copy(
-                        isAuthenticated = false,
-                        currentDriver = null,
-                        isLoading = false,
-                        errorMessage = exception.message ?: "Login failed"
-                    )
-                    Log.e(TAG, "Login with driver ID failed", exception)
-                }
-        }
-    }
+
     
     /**
      * Logout current driver
@@ -165,30 +135,7 @@ class AuthViewModel(
         }
     }
     
-    /**
-     * Change password
-     */
-    fun changePassword(currentPassword: String, newPassword: String) {
-        viewModelScope.launch {
-            _authState.value = _authState.value.copy(isLoading = true)
-            
-            authRepository.changePassword(currentPassword, newPassword)
-                .onSuccess {
-                    _authState.value = _authState.value.copy(
-                        isLoading = false,
-                        errorMessage = null
-                    )
-                    Log.d(TAG, "Password changed successfully")
-                }
-                .onFailure { exception ->
-                    _authState.value = _authState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message ?: "Failed to change password"
-                    )
-                    Log.e(TAG, "Failed to change password", exception)
-                }
-        }
-    }
+
     
     /**
      * Clear error message

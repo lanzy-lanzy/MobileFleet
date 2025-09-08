@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ml.mobilefleet.data.models.Terminal
 import com.ml.mobilefleet.data.models.Trip
+import com.ml.mobilefleet.data.repository.AuthRepository
 import com.ml.mobilefleet.data.repository.FirebaseRepository
 import com.ml.mobilefleet.services.TextToSpeechService
 import com.ml.mobilefleet.services.HapticFeedbackService
@@ -16,25 +17,27 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 
 /**
- * ViewModel for managing trip operations
+ * ViewModel for managing trip operations with role-based access
  */
 class TripViewModel(
     private val repository: FirebaseRepository = FirebaseRepository(),
+    private val authRepository: AuthRepository,
     private var textToSpeechService: TextToSpeechService? = null,
     private val hapticFeedbackService: HapticFeedbackService? = null
 ) : ViewModel() {
-    
-    // Current driver ID (hardcoded as per requirements)
-    private val currentDriverId = "DRV001"
+
+    companion object {
+        private const val TAG = "TripViewModel"
+    }
     
     // UI State
     private val _uiState = MutableStateFlow(TripUiState())
     val uiState: StateFlow<TripUiState> = _uiState.asStateFlow()
-    
+
     // Available terminals
     private val _terminals = MutableStateFlow<List<Terminal>>(emptyList())
     val terminals: StateFlow<List<Terminal>> = _terminals.asStateFlow()
-    
+
     // Current active trip
     private val _currentTrip = MutableStateFlow<Trip?>(null)
     val currentTrip: StateFlow<Trip?> = _currentTrip.asStateFlow()
@@ -42,6 +45,28 @@ class TripViewModel(
     // Trip history
     private val _tripHistory = MutableStateFlow<List<Trip>>(emptyList())
     val tripHistory: StateFlow<List<Trip>> = _tripHistory.asStateFlow()
+
+    /**
+     * Get current authenticated driver ID
+     */
+    private suspend fun getCurrentDriverId(): String? {
+        val driver = authRepository.getCurrentDriver().getOrNull()
+        return driver?.driver_id
+    }
+
+    /**
+     * Initialize user-specific data after authentication
+     */
+    fun initializeUserData() {
+        viewModelScope.launch {
+            val driverId = getCurrentDriverId()
+            if (driverId != null) {
+                loadCurrentTrip()
+                loadTripHistory()
+                startTripStatusMonitoring()
+            }
+        }
+    }
 
     // Terminal names for trip history display
     private val _terminalNames = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -52,10 +77,15 @@ class TripViewModel(
     
     init {
         loadTerminals()
-        loadCurrentTrip()
-        loadTripHistory()
-        // Set up periodic trip status checking for state persistence
-        startTripStatusMonitoring()
+        // Load user-specific data only when authenticated
+        viewModelScope.launch {
+            val driverId = getCurrentDriverId()
+            if (driverId != null) {
+                loadCurrentTrip()
+                loadTripHistory()
+                startTripStatusMonitoring()
+            }
+        }
     }
 
     /**
@@ -87,13 +117,23 @@ class TripViewModel(
     }
     
     /**
-     * Load current active trip for the driver
+     * Load current active trip for the authenticated driver
      */
     private fun loadCurrentTrip() {
         viewModelScope.launch {
-            repository.getCurrentTripForDriver(currentDriverId)
+            val driverId = getCurrentDriverId()
+            if (driverId == null) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "No authenticated driver found"
+                )
+                return@launch
+            }
+
+            repository.getCurrentTripForDriver(driverId)
                 .onSuccess { trip ->
                     _currentTrip.value = trip
+                    // Load terminal names for current trip if it exists
+                    trip?.let { loadTerminalNamesForTrips(listOf(it)) }
                 }
                 .onFailure { exception ->
                     _uiState.value = _uiState.value.copy(
@@ -104,14 +144,21 @@ class TripViewModel(
     }
 
     /**
-     * Load trip history for the driver
+     * Load trip history for the authenticated driver
      */
     private fun loadTripHistory() {
         viewModelScope.launch {
-            repository.getCompletedTripsForDriver(currentDriverId)
+            val driverId = getCurrentDriverId()
+            if (driverId == null) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "No authenticated driver found"
+                )
+                return@launch
+            }
+
+            repository.getCompletedTripsForDriver(driverId)
                 .onSuccess { trips ->
                     _tripHistory.value = trips
-
                     // Load terminal names for the trips
                     loadTerminalNamesForTrips(trips)
                 }
@@ -121,6 +168,13 @@ class TripViewModel(
                     )
                 }
         }
+    }
+
+    /**
+     * Refresh trip history (public method for manual refresh)
+     */
+    fun refreshTripHistory() {
+        loadTripHistory()
     }
 
     /**
@@ -201,7 +255,7 @@ class TripViewModel(
     }
     
     /**
-     * Start a new trip
+     * Start a new trip for the authenticated driver
      */
     fun startTrip(destinationTerminalId: String, passengers: Int) {
         val startTerminal = _uiState.value.startTerminal
@@ -215,10 +269,19 @@ class TripViewModel(
         val destinationTerminalName = destinationTerminal?.name ?: destinationTerminalId
 
         viewModelScope.launch {
+            val driverId = getCurrentDriverId()
+            if (driverId == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "No authenticated driver found"
+                )
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             repository.startTrip(
-                driverId = currentDriverId,
+                driverId = driverId,
                 startTerminalId = startTerminal.id,
                 destinationTerminalId = destinationTerminalId,
                 passengers = passengers

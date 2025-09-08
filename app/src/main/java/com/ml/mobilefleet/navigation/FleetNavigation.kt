@@ -2,6 +2,7 @@ package com.ml.mobilefleet.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -10,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ml.mobilefleet.ui.trip.CompleteTripScreen
 import com.ml.mobilefleet.ui.trip.StartTripScreen
 import com.ml.mobilefleet.ui.trip.TripViewModel
+import com.ml.mobilefleet.ui.trip.TripViewModelFactory
 import com.ml.mobilefleet.ui.history.TripHistoryScreen
 import com.ml.mobilefleet.ui.settings.SettingsScreen
 
@@ -32,8 +34,12 @@ fun FleetNavigation(
     navController: NavHostController = rememberNavController(),
     startDestination: String = FleetDestinations.START_TRIP
 ) {
-    // Shared ViewModel across screens
-    val tripViewModel: TripViewModel = viewModel()
+    val context = LocalContext.current
+
+    // Shared ViewModel across screens with AuthRepository
+    val tripViewModel: TripViewModel = viewModel(
+        factory = TripViewModelFactory(context)
+    )
     
     NavHost(
         navController = navController,

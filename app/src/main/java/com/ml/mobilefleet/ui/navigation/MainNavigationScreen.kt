@@ -8,6 +8,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -18,8 +19,10 @@ import com.ml.mobilefleet.navigation.FleetDestinations
 import com.ml.mobilefleet.ui.trip.CompleteTripScreen
 import com.ml.mobilefleet.ui.trip.StartTripScreen
 import com.ml.mobilefleet.ui.trip.TripViewModel
+import com.ml.mobilefleet.ui.trip.TripViewModelFactory
 import com.ml.mobilefleet.ui.history.TripHistoryScreen
 import com.ml.mobilefleet.ui.settings.SettingsScreen
+import com.ml.mobilefleet.ui.auth.AuthViewModel
 
 /**
  * Main navigation screen with bottom navigation bar
@@ -29,11 +32,24 @@ import com.ml.mobilefleet.ui.settings.SettingsScreen
 fun MainNavigationScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = FleetDestinations.START_TRIP
+    startDestination: String = FleetDestinations.START_TRIP,
+    authViewModel: AuthViewModel? = null,
+    onAuthenticationSuccess: (() -> Unit)? = null
 ) {
-    // Shared ViewModel across screens
-    val tripViewModel: TripViewModel = viewModel()
+    val context = LocalContext.current
+
+    // Shared ViewModel across screens with AuthRepository
+    val tripViewModel: TripViewModel = viewModel(
+        factory = TripViewModelFactory(context)
+    )
     val currentTrip by tripViewModel.currentTrip.collectAsStateWithLifecycle()
+
+    // Initialize user data when authenticated
+    LaunchedEffect(authViewModel) {
+        if (authViewModel != null) {
+            tripViewModel.initializeUserData()
+        }
+    }
 
     // Get current destination for bottom navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -155,7 +171,9 @@ fun MainNavigationScreen(
             }
             
             composable(FleetDestinations.SETTINGS) {
-                SettingsScreen()
+                SettingsScreen(
+                    authViewModel = authViewModel
+                )
             }
         }
     }

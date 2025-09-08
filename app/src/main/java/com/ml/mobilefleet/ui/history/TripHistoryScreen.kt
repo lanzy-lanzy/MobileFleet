@@ -40,7 +40,10 @@ fun TripHistoryScreen(
 
     PullToRefreshBox(
         isRefreshing = uiState.isLoading,
-        onRefresh = { viewModel.refreshTripStatus() },
+        onRefresh = {
+            viewModel.refreshTripStatus()
+            viewModel.refreshTripHistory()
+        },
         modifier = modifier.fillMaxSize()
     ) {
         Column(

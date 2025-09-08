@@ -45,7 +45,6 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var loginMethod by remember { mutableStateOf("email") } // "email" or "driver_id"
     
     // Animation for the login form
     var isVisible by remember { mutableStateOf(false) }
@@ -138,38 +137,19 @@ fun LoginScreen(
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Login Method Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            onClick = { loginMethod = "email" },
-                            label = { Text("Email") },
-                            selected = loginMethod == "email",
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            onClick = { loginMethod = "driver_id" },
-                            label = { Text("Driver ID") },
-                            selected = loginMethod == "driver_id",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    
-                    // Email/Driver ID Input
+                    // Email Input
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text(if (loginMethod == "email") "Email" else "Driver ID") },
+                        label = { Text("Email") },
                         leadingIcon = {
                             Icon(
-                                imageVector = if (loginMethod == "email") Icons.Default.Email else Icons.Default.Badge,
+                                imageVector = Icons.Default.Email,
                                 contentDescription = null
                             )
                         },
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = if (loginMethod == "email") KeyboardType.Email else KeyboardType.Text,
+                            keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -208,11 +188,7 @@ fun LoginScreen(
                             onDone = {
                                 focusManager.clearFocus()
                                 if (email.isNotBlank() && password.isNotBlank()) {
-                                    if (loginMethod == "email") {
-                                        viewModel.login(email, password)
-                                    } else {
-                                        viewModel.loginWithDriverId(email, password)
-                                    }
+                                    viewModel.login(email, password)
                                 }
                             }
                         ),
@@ -255,11 +231,7 @@ fun LoginScreen(
                     // Login Button
                     Button(
                         onClick = {
-                            if (loginMethod == "email") {
-                                viewModel.login(email, password)
-                            } else {
-                                viewModel.loginWithDriverId(email, password)
-                            }
+                            viewModel.login(email, password)
                         },
                         enabled = email.isNotBlank() && password.isNotBlank() && !authState.isLoading,
                         modifier = Modifier

@@ -18,7 +18,7 @@ data class Driver(
     val is_active: Boolean = true,
     // Authentication fields
     val email: String = "",
-    val password_hash: String = "", // For local auth (if not using Firebase Auth)
+    val auth_uid: String = "", // Firebase Auth UID
     val phone_number: String = "",
     val profile_image_url: String = "",
     val address: String = "",

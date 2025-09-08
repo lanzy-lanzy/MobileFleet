@@ -3,6 +3,7 @@ package com.ml.mobilefleet.ui.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,15 +12,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ml.mobilefleet.ui.auth.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel? = null
 ) {
     var soundEnabled by remember { mutableStateOf(true) }
     var hapticEnabled by remember { mutableStateOf(true) }
     var autoScanEnabled by remember { mutableStateOf(false) }
+
+    val authState by authViewModel?.authState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
     Column(
         modifier = modifier
@@ -116,18 +122,37 @@ fun SettingsScreen(
                 subtitle = "1.0.0",
                 icon = Icons.Default.AppSettingsAlt
             )
-            
+
             SettingsInfoItem(
                 title = "Driver ID",
-                subtitle = "DRV001",
+                subtitle = authState?.currentDriver?.driver_id ?: "Not logged in",
                 icon = Icons.Default.Person
             )
-            
+
             SettingsInfoItem(
                 title = "Last Sync",
                 subtitle = "Just now",
                 icon = Icons.Default.Sync
             )
+        }
+
+        // Account Section (only show if authenticated)
+        if (authViewModel != null && authState?.isAuthenticated == true) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsSection(
+                title = "Account",
+                icon = Icons.Default.AccountCircle
+            ) {
+                SettingsLogoutItem(
+                    title = "Sign Out",
+                    subtitle = "Sign out of ${authState?.currentDriver?.name ?: "your account"}",
+                    icon = Icons.AutoMirrored.Filled.Logout,
+                    onClick = {
+                        authViewModel.logout()
+                    }
+                )
+            }
         }
     }
 }
@@ -238,9 +263,9 @@ private fun SettingsInfoItem(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(24.dp)
         )
-        
+
         Spacer(modifier = Modifier.width(12.dp))
-        
+
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -254,6 +279,63 @@ private fun SettingsInfoItem(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsLogoutItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Arrow icon to indicate it's clickable
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                modifier = Modifier.size(20.dp)
             )
         }
     }
