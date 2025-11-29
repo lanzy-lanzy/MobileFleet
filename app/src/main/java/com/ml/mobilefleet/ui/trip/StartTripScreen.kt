@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -186,11 +187,13 @@ fun StartTripScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Modern Header
+            // Modern Header with enhanced visual appeal
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(elevation = 24.dp, shape = RoundedCornerShape(32.dp)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                shape = RoundedCornerShape(32.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 )
@@ -202,57 +205,71 @@ fun StartTripScreen(
                             brush = Brush.linearGradient(
                                 colors = listOf(
                                     MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                                    MaterialTheme.colorScheme.secondary
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
                                 ),
                                 start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                                end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
+                                end = androidx.compose.ui.geometry.Offset(1200f, 1200f)
                             )
                         )
-                        .padding(32.dp)
+                        .padding(40.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Floating icon
+                        // Floating icon with glow effect
                         Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .shadow(
-                                    elevation = 16.dp,
-                                    shape = CircleShape,
-                                    ambientColor = Color.Black.copy(alpha = 0.3f)
-                                )
-                                .clip(CircleShape)
-                                .background(Color.White),
+                            modifier = Modifier.size(96.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsBus,
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                            // Glow background
+                            Box(
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.2f))
                             )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .shadow(
+                                        elevation = 20.dp,
+                                        shape = CircleShape,
+                                        ambientColor = Color.Black.copy(alpha = 0.35f)
+                                    )
+                                    .clip(CircleShape)
+                                    .background(Color.White),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsBus,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(44.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
 
-                        // Title section
+                        // Title section with enhanced typography
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
                                 text = "Start Your Journey",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                text = "Follow the steps below to begin your trip",
+                                text = "Complete the steps below to begin your trip",
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.9f),
-                                textAlign = TextAlign.Center
+                                color = Color.White.copy(alpha = 0.95f),
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
@@ -714,98 +731,207 @@ fun StartTripScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Trip summary card - Clean and minimal
+                    // Trip summary card - Enhanced design
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(elevation = 12.dp, shape = RoundedCornerShape(24.dp)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.04f)
+                                        )
+                                    )
+                                )
+                                .padding(28.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
-                            Text(
-                                text = "Trip Summary",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            // Route display - cleaner layout
+                            // Header
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                // From terminal
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.Start
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "From",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = uiState.startTerminal?.name ?: "Unknown",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                    Icon(
+                                        imageVector = Icons.Default.DirectionsBus,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
-
-                                // Arrow - smaller and subtle
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
+                                Text(
+                                    text = "Trip Summary",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-
-                                // To terminal
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.End
-                                ) {
-                                    Text(
-                                        text = "To",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = selectedDestination?.name ?: "Unknown",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
                             }
 
-                            // Passenger count - subtle styling
+                            // Route display with modern styling
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                // From terminal
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                            RoundedCornerShape(16.dp)
+                                        )
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "From",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = uiState.startTerminal?.name ?: "Unknown",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+
+                                // Arrow - modern design
                                 Icon(
-                                    imageVector = Icons.Default.Person,
+                                    imageVector = Icons.Default.NavigateNext,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .weight(0.2f)
                                 )
-                                Text(
-                                    text = "$passengers passengers",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+
+                                // To terminal
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(
+                                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                                            RoundedCornerShape(16.dp)
+                                        )
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "To",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = selectedDestination?.name ?: "Unknown",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Divider
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                                    )
+                            )
+
+                            // Passenger count - enhanced styling
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                                        RoundedCornerShape(16.dp)
+                                    )
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = "Passengers",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = passengers,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
                         }
                     }
 
-                    // Enhanced Start Trip Button
+                    // Enhanced Start Trip Button with gradient and premium feel
                     Button(
                         onClick = {
                             val passengerCount = passengers.toIntOrNull()
@@ -816,40 +942,45 @@ fun StartTripScreen(
                         enabled = !uiState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(80.dp),
-                        shape = RoundedCornerShape(28.dp),
+                            .height(72.dp)
+                            .shadow(
+                                elevation = if (!uiState.isLoading) 20.dp else 8.dp,
+                                shape = RoundedCornerShape(24.dp),
+                                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            ),
+                        shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
-                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         ),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 16.dp,
-                            pressedElevation = 24.dp,
+                            defaultElevation = 0.dp,
+                            pressedElevation = 8.dp,
                             disabledElevation = 0.dp
                         )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             if (uiState.isLoading) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp),
-                                    strokeWidth = 4.dp,
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 3.dp,
                                     color = Color.White
                                 )
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.DirectionsBus,
                                     contentDescription = null,
-                                    modifier = Modifier.size(36.dp),
+                                    modifier = Modifier.size(32.dp),
                                     tint = Color.White
                                 )
                             }
                             Text(
-                                text = if (uiState.isLoading) "Starting Your Trip..." else "Start Trip",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
+                                text = if (uiState.isLoading) "Starting Trip..." else "Start Trip",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
                         }
