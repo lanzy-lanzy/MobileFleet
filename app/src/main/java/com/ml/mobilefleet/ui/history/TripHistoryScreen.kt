@@ -1,9 +1,13 @@
 package com.ml.mobilefleet.ui.history
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,9 +16,13 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ml.mobilefleet.data.models.Trip
@@ -23,18 +31,49 @@ import com.ml.mobilefleet.ui.trip.TripViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+private val GradientPrimary = listOf(
+    Color(0xFF667eea),
+    Color(0xFF764ba2)
+)
+private val GradientSuccess = listOf(
+    Color(0xFF11998e),
+    Color(0xFF38ef7d)
+)
+private val GradientAccent = listOf(
+    Color(0xFFfc4a1a),
+    Color(0xFFf7b733)
+)
+
+@Composable
+private fun GlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.9f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            content = content
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripHistoryScreen(
     viewModel: TripViewModel,
     modifier: Modifier = Modifier
 ) {
-    // Get real trip history from ViewModel
     val tripHistory by viewModel.tripHistory.collectAsStateWithLifecycle()
     val terminalNames by viewModel.terminalNames.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Modal state
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
     var showTripDetails by remember { mutableStateOf(false) }
 
@@ -46,150 +85,166 @@ fun TripHistoryScreen(
         },
         modifier = modifier.fillMaxSize()
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Header
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.History,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFF8F9FF),
+                            Color(0xFFE8ECFF),
+                            Color.White
+                        )
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+            ) {
+                GlassCard {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .shadow(8.dp, CircleShape)
+                                .clip(CircleShape)
+                                .background(
+                                    brush = Brush.linearGradient(GradientPrimary)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
                         Text(
                             text = "Trip History",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color(0xFF1A1A2E)
                         )
+
                         Text(
-                            text = "Your completed trips",
+                            text = "${tripHistory.size} completed trips",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color.Gray
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // Loading indicator
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF667eea)
+                        )
+                    }
                 }
-            }
 
-            // Trip List
-            if (tripHistory.isEmpty() && !uiState.isLoading) {
-                // Empty state
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
-                ) {
-                    Column(
+                if (tripHistory.isEmpty() && !uiState.isLoading) {
+                    GlassCard {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            listOf(Color.Gray.copy(alpha = 0.1f), Color.Gray.copy(alpha = 0.05f))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsBus,
+                                    contentDescription = null,
+                                    tint = Color.Gray.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+
+                            Text(
+                                text = "No trips yet",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1A1A2E)
+                            )
+
+                            Text(
+                                text = "Your completed trips will appear here",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else if (!uiState.isLoading) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(tripHistory) { trip ->
+                            TripHistoryItem(
+                                trip = trip,
+                                terminalNames = terminalNames,
+                                onClick = {
+                                    selectedTrip = trip
+                                    showTripDetails = true
+                                }
+                            )
+                        }
+                    }
+                }
+
+                uiState.errorMessage?.let { error ->
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(40.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(top = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFEBEE)
+                        ),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DirectionsBus,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No trips yet",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Your completed trips will appear here",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-            } else if (!uiState.isLoading) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(tripHistory) { trip ->
-                        TripHistoryItem(
-                            trip = trip,
-                            terminalNames = terminalNames,
-                            onClick = {
-                                selectedTrip = trip
-                                showTripDetails = true
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Error message
-            uiState.errorMessage?.let { error ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Error",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        TextButton(
-                            onClick = { viewModel.clearError() }
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text("Dismiss")
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFD32F2F),
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { viewModel.clearError() }) {
+                                Text("Dismiss", color = Color(0xFFD32F2F))
+                            }
                         }
                     }
                 }
@@ -197,7 +252,6 @@ fun TripHistoryScreen(
         }
     }
 
-    // Trip Details Modal
     TripDetailsModal(
         isVisible = showTripDetails,
         trip = selectedTrip,
@@ -222,17 +276,15 @@ fun TripHistoryItem(
     val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-    // Get terminal names or fallback to IDs with loading indicator
     val startTerminalName = terminalNames[trip.start_terminal] ?:
         if (terminalNames.isEmpty()) "Loading..." else trip.start_terminal
     val destinationTerminalName = terminalNames[trip.destination_terminal] ?:
         if (terminalNames.isEmpty()) "Loading..." else trip.destination_terminal
 
-    // Calculate trip duration
     val duration = if (trip.start_time != null && trip.arrival_time != null) {
         val durationMs = trip.arrival_time.toDate().time - trip.start_time.toDate().time
         val minutes = (durationMs / (1000 * 60)).toInt()
-        "${minutes}min"
+        "${minutes} min"
     } else {
         "N/A"
     }
@@ -241,16 +293,16 @@ fun TripHistoryItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Route information
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -260,72 +312,138 @@ fun TripHistoryItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.linearGradient(GradientSuccess)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
                     Text(
                         text = "$startTerminalName → $destinationTerminalName",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color(0xFF1A1A2E),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = "View details",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint = Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
                 )
             }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Trip details
+
+            Divider(color = Color.Gray.copy(alpha = 0.1f))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${trip.passengers} passengers",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Spacer(modifier = Modifier.width(16.dp))
-                    
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = duration,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFE8F5E9)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.People,
+                                contentDescription = null,
+                                tint = Color(0xFF11998e),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${trip.passengers}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1A2E)
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFE8F0FF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null,
+                                tint = Color(0xFF667eea),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = duration,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1A1A2E)
+                        )
+                    }
                 }
-                
+
+                trip.start_time?.let { startTime ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = Color.Gray.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = dateFormatter.format(startTime.toDate()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = Color.Gray.copy(alpha = 0.6f),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 trip.start_time?.let { startTime ->
                     Text(
-                        text = "${dateFormatter.format(startTime.toDate())} • ${timeFormatter.format(startTime.toDate())}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = timeFormatter.format(startTime.toDate()),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
                     )
                 }
             }

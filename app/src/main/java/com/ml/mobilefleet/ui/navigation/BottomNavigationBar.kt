@@ -1,34 +1,52 @@
 package com.ml.mobilefleet.ui.navigation
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ml.mobilefleet.data.models.Trip
 
-/**
- * Navigation destinations for bottom navigation
- */
+private val GradientPrimary = listOf(
+    Color(0xFF667eea),
+    Color(0xFF764ba2)
+)
+private val GradientSuccess = listOf(
+    Color(0xFF11998e),
+    Color(0xFF38ef7d)
+)
+private val GradientWarning = listOf(
+    Color(0xFFFF6B6B),
+    Color(0xFFFF8E53)
+)
+private val GradientInfo = listOf(
+    Color(0xFF4facfe),
+    Color(0xFF00f2fe)
+)
+
 enum class BottomNavDestination(
     val route: String,
     val icon: ImageVector,
-    val label: String
+    val label: String,
+    val gradient: List<Color>
 ) {
-    START_TRIP("start_trip", Icons.Default.PlayArrow, "Start Trip"),
-    COMPLETE_TRIP("complete_trip", Icons.Default.CheckCircle, "Complete Trip"),
-    TRIP_HISTORY("trip_history", Icons.Default.History, "History"),
-    SETTINGS("settings", Icons.Default.Settings, "Settings")
+    START_TRIP("start_trip", Icons.Default.PlayArrow, "Start Trip", GradientSuccess),
+    COMPLETE_TRIP("complete_trip", Icons.Default.CheckCircle, "Complete Trip", GradientWarning),
+    TRIP_HISTORY("trip_history", Icons.Default.History, "History", GradientInfo),
+    SETTINGS("settings", Icons.Default.Settings, "Settings", GradientPrimary)
 }
 
-/**
- * Smart bottom navigation bar that adapts based on trip status
- */
 @Composable
 fun SmartBottomNavigationBar(
     currentDestination: String,
@@ -37,22 +55,24 @@ fun SmartBottomNavigationBar(
     modifier: Modifier = Modifier
 ) {
     val hasActiveTrip = currentTrip != null
-    
+
     NavigationBar(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        tonalElevation = 8.dp
+        containerColor = Color.White,
+        contentColor = Color.White,
+        tonalElevation = 0.dp
     ) {
         BottomNavDestination.values().forEach { destination ->
             val isSelected = currentDestination == destination.route
             val isEnabled = when (destination) {
-                BottomNavDestination.START_TRIP -> !hasActiveTrip // Disabled when trip is active
-                BottomNavDestination.COMPLETE_TRIP -> hasActiveTrip // Only enabled when trip is active
-                BottomNavDestination.TRIP_HISTORY -> true // Always enabled
-                BottomNavDestination.SETTINGS -> true // Always enabled
+                BottomNavDestination.START_TRIP -> !hasActiveTrip
+                BottomNavDestination.COMPLETE_TRIP -> hasActiveTrip
+                BottomNavDestination.TRIP_HISTORY -> true
+                BottomNavDestination.SETTINGS -> true
             }
-            
+
+            val isCompleteTripActive = destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip
+
             NavigationBarItem(
                 icon = {
                     NavigationIcon(
@@ -80,19 +100,15 @@ fun SmartBottomNavigationBar(
                 },
                 enabled = isEnabled,
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = getIconColor(destination, isSelected, hasActiveTrip),
-                    unselectedIconColor = if (isEnabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                    selectedIconColor = if (isCompleteTripActive) Color(0xFFFF6B6B) else Color(0xFF667eea),
+                    unselectedIconColor = if (isEnabled) Color.Gray else Color.Gray.copy(alpha = 0.3f),
+                    selectedTextColor = if (isCompleteTripActive) Color(0xFFFF6B6B) else Color(0xFF667eea),
+                    unselectedTextColor = if (isEnabled) Color.Gray else Color.Gray.copy(alpha = 0.3f),
+                    indicatorColor = if (isCompleteTripActive) {
+                        Color(0xFFFFEBEE)
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    },
-                    selectedTextColor = getTextColor(destination, isSelected, hasActiveTrip),
-                    unselectedTextColor = if (isEnabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    },
-                    indicatorColor = getIndicatorColor(destination, hasActiveTrip)
+                        Color(0xFFE8F0FF)
+                    }
                 )
             )
         }
@@ -107,23 +123,60 @@ private fun NavigationIcon(
     hasActiveTrip: Boolean,
     destination: BottomNavDestination
 ) {
-    Box {
-        Icon(
-            imageVector = icon,
-            contentDescription = destination.label,
-            modifier = Modifier.size(24.dp)
-        )
-        
-        // Add indicator for required action
+    val isCompleteTripActive = destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(40.dp)
+    ) {
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.linearGradient(
+                            if (isCompleteTripActive) GradientWarning else destination.gradient
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = destination.label,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isEnabled) Color.Gray.copy(alpha = 0.1f) else Color.Transparent
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = destination.label,
+                    tint = if (isEnabled) Color.Gray else Color.Gray.copy(alpha = 0.3f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
         if (destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip && !isSelected) {
             Badge(
-                modifier = Modifier.offset(x = 8.dp, y = (-8).dp),
-                containerColor = MaterialTheme.colorScheme.error
+                modifier = Modifier.offset(x = 24.dp, y = (-8).dp),
+                containerColor = Color(0xFFFF6B6B)
             ) {
                 Text(
                     text = "!",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
         }
@@ -143,55 +196,16 @@ private fun NavigationLabel(
         destination == BottomNavDestination.START_TRIP && !isEnabled -> "Trip Active"
         else -> text
     }
-    
+
     Text(
         text = displayText,
         style = MaterialTheme.typography.labelSmall,
-        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+        color = when {
+            !isEnabled -> Color.Gray.copy(alpha = 0.5f)
+            destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip -> Color(0xFFFF6B6B)
+            isSelected -> Color(0xFF667eea)
+            else -> Color.Gray
+        }
     )
-}
-
-@Composable
-private fun getIconColor(
-    destination: BottomNavDestination,
-    isSelected: Boolean,
-    hasActiveTrip: Boolean
-): Color {
-    return when {
-        destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip -> {
-            if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error
-        }
-        isSelected -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-}
-
-@Composable
-private fun getTextColor(
-    destination: BottomNavDestination,
-    isSelected: Boolean,
-    hasActiveTrip: Boolean
-): Color {
-    return when {
-        destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip -> {
-            if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.error
-        }
-        isSelected -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-}
-
-@Composable
-private fun getIndicatorColor(
-    destination: BottomNavDestination,
-    hasActiveTrip: Boolean
-): Color {
-    return when {
-        destination == BottomNavDestination.COMPLETE_TRIP && hasActiveTrip -> {
-            MaterialTheme.colorScheme.errorContainer
-        }
-        else -> MaterialTheme.colorScheme.secondaryContainer
-    }
 }

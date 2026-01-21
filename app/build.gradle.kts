@@ -95,6 +95,7 @@ dependencies {
 
     // Material Icons Extended for more icons
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
+    implementation(libs.androidx.compose.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
