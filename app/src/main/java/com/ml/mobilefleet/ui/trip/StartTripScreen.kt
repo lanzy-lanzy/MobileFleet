@@ -197,6 +197,10 @@ fun StartTripScreen(
     var selectedDestination by remember { mutableStateOf<Terminal?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
+
     LaunchedEffect(currentTrip) {
         if (currentTrip != null) {
             onTripStarted()

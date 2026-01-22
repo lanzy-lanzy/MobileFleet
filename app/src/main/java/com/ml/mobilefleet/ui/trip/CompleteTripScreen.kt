@@ -86,6 +86,10 @@ fun CompleteTripScreen(
 
     var showScanner by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
+
     val textToSpeechService = remember { TextToSpeechService(context) }
 
     LaunchedEffect(Unit) {

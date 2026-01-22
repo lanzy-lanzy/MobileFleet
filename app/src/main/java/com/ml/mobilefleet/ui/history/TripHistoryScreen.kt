@@ -77,6 +77,10 @@ fun TripHistoryScreen(
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
     var showTripDetails by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
+
     PullToRefreshBox(
         isRefreshing = uiState.isLoading,
         onRefresh = {
